@@ -95,8 +95,28 @@ server <- function(input, output, session = session) {
     subset(starwars, select = c(name, height, mass, birth_year, homeworld, species, films))
   })
   # Updating the URL Bar
+  observe({
+    print(reactiveValuesToList(input))
+    session$doBookmark()
+  })
+  onBookmarked(function(url) {
+    updateQueryString(url)
+  })
   # Download data in the datatable
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste("star-wars-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(swInput(), file)
+    }
+  )
   # Reset Filter Data
+  observeEvent(input$reset, {
+    updateSelectInput(session, "worldSelect", selected = c("Naboo", "Tatooine"))
+    updateSliderInput(session, "birthSelect", value = c(min(starwars.load$birth_year, na.rm = T), max(starwars.load$birth_year, na.rm = T)))
+    showNotification("You have successfully reset the filters", type = "message")
+  })
 }
 
 # Run the application 
