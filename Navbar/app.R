@@ -10,14 +10,13 @@ library(dplyr)
 library(plotly)
 library(shinythemes)
 library(stringr)
+library(shinyjs)
 
 starwars.load <- starwars %>%
   mutate(films = as.character(films),
          vehicles = as.character(vehicles),
          starships = as.character(starships),
          name = as.factor(name))
-
-diamonds.load <- diamonds
 
 pdf(NULL)
 
@@ -95,8 +94,34 @@ server <- function(input, output, session = session) {
     subset(starwars, select = c(name, height, mass, birth_year, homeworld, species, films))
   })
   # Updating the URL Bar
+  observe({
+    print(reactiveValuesToList(input))
+    session$doBookmark()
+  })
+  onBookmarked(function(url) {
+    updateQueryString(url)
+  })
   # Download data in the datatable
+  output$downloadData <- downloadHandler(
+    #creating a function to name the data that is being downloaded
+    filename = function(){
+      paste("star-wars-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(swInput(), file)
+    }
+  )
   # Reset Filter Data
+  observeEvent(input$reset, {
+    updateSelectInput(session = session,
+                      "worldSelect",
+                      selected = "")
+    updateSliderInput(session = session,
+                      "birthSelect",
+                      value = c(min(starwars.load$birth_year, na.rm = T), max(starwars.load$birth_year, na.rm = T))
+                      )
+    showNotification("You have reset the aplication!! <3", type = "warning", duration = 2)
+  })
 }
 
 # Run the application 
