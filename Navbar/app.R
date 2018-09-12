@@ -1,8 +1,6 @@
 # Class 5
-# In Class Examples - Tabset
+# In Class Examples - Navbar
 
-# Class 4
-# In Class Examples - Inputs - Final
 
 library(shiny)
 library(reshape2)
@@ -10,6 +8,7 @@ library(dplyr)
 library(plotly)
 library(shinythemes)
 library(stringr)
+library(shinyjs)
 
 starwars.load <- starwars %>%
   mutate(films = as.character(films),
@@ -17,12 +16,11 @@ starwars.load <- starwars %>%
          starships = as.character(starships),
          name = as.factor(name))
 
-diamonds.load <- diamonds
-
 pdf(NULL)
 
 # Define UI for application that draws a histogram
-ui <- navbarPage("Star Wars NavBar", 
+ui <- navbarPage("Star Wars NavBar",
+                 useShinyjs(),
                  tabPanel("Plot",
                           sidebarLayout(
                             sidebarPanel(
@@ -59,6 +57,7 @@ ui <- navbarPage("Star Wars NavBar",
 
 # Define server logic
 server <- function(input, output, session = session) {
+  setBookmarkExclude(c("reset"))
   # Filtered Starwars data
   swInput <- reactive({
     starwars <- starwars.load %>%
@@ -95,8 +94,34 @@ server <- function(input, output, session = session) {
     subset(starwars, select = c(name, height, mass, birth_year, homeworld, species, films))
   })
   # Updating the URL Bar
+  observe({
+    print(reactiveValuesToList(input))
+    session$doBookmark()
+  })
+  onBookmarked(function(url) {
+    updateQueryString(url)
+  })
   # Download data in the datatable
+  output$downloadData <- downloadHandler(
+    # Creating a function to name the data that is being downloaded
+    filename = function() {
+      paste0("star-wars-", Sys.Date(), ".csv")
+    },
+    content = function(file) {
+      write.csv(swInput(), file)
+    }
+  )
   # Reset Filter Data
+  observeEvent(input$reset, {
+    updateSelectInput(session = session,
+                      "worldSelect",
+                      selected = "")
+    updateSliderInput(session = session,
+                      "birthSelect",
+                      value = c(min(starwars.load$birth_year, na.rm = T), max(starwars.load$birth_year, na.rm = T))
+    )
+    alert("You have reset the application!!! <3")
+  })
 }
 
 # Run the application 
