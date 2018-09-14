@@ -17,8 +17,6 @@ starwars.load <- starwars %>%
          starships = as.character(starships),
          name = as.factor(name))
 
-diamonds.load <- diamonds
-
 pdf(NULL)
 
 # Define UI for application that draws a histogram
